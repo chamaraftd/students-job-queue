@@ -15,10 +15,11 @@ export class NotificationsService
 {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(NotificationsService.name);
+  private connections = new Set();
 
-  notifyJobStatus(status: string) {
-    //client.broadcast.to(client.id).emit('JobStatus', status);
-    this.server.emit('JobStatus', status);
+  notifyJobStatus(status: string, wsId: string) {
+    if (this.connections.has(wsId))
+      this.server.to(wsId).emit('JobStatus', status);
   }
 
   afterInit() {
@@ -27,9 +28,11 @@ export class NotificationsService
 
   handleDisconnect(client: Socket) {
     console.log(`Client disconnected: ${client.id}`);
+    this.connections.delete(client.id);
   }
 
   handleConnection(client: Socket, ...args: any[]) {
+    this.connections.add(client.id);
     console.log(`Client connected: ${client.id}`);
   }
 }
